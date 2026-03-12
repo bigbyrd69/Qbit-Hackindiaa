@@ -116,51 +116,51 @@ gsap.from(".heartbeat-background",{
 }
 )
 
-gsap.from(".card1", {
-x: -520,
-    opacity: 0,
-    duration:1,
-   delay:0.7, 
+// gsap.from(".card1", {
+// x: -520,
+//     opacity: 0,
+//     duration:1,
+//    delay:0.7, 
   
-   scrollTrigger:{
-        trigger:".card1",
-        scroller:"body",
-       start: "top 52%", 
-        end:" bottom 30%",
+//    scrollTrigger:{
+//         trigger:".card1",
+//         scroller:"body",
+//        start: "top 52%", 
+//         end:" bottom 30%",
        
-        scrub:3,
-}
-})
-gsap.from(".card2", {
-y: 250,
-    opacity: 0,
-    duration:1,
-   delay:0.7, 
+//         scrub:3,
+// }
+// })
+// gsap.from(".card2", {
+// y: 250,
+//     opacity: 0,
+//     duration:1,
+//    delay:0.7, 
   
-   scrollTrigger:{
-        trigger:".card1",
-        scroller:"body",
-       start: "top 52%", 
-        end:" bottom 30%",
+//    scrollTrigger:{
+//         trigger:".card1",
+//         scroller:"body",
+//        start: "top 52%", 
+//         end:" bottom 30%",
        
-        scrub:3,
-}
-})
-gsap.from(".card3", {
-x: 560,
-    opacity: 0,
-    duration:1,
-   delay:0.7, 
+//         scrub:3,
+// }
+// })
+// gsap.from(".card3", {
+// x: 560,
+//     opacity: 0,
+//     duration:1,
+//    delay:0.7, 
   
-   scrollTrigger:{
-        trigger:".card1",
-        scroller:"body",
-       start: "top 52%", 
-        end:" bottom 30%",
+//    scrollTrigger:{
+//         trigger:".card1",
+//         scroller:"body",
+//        start: "top 52%", 
+//         end:" bottom 30%",
       
-        scrub:3,
-}
-})
+//         scrub:3,
+// }
+// })
 
 gsap.to(".third h1",{
    x:1220,
