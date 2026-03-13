@@ -230,6 +230,7 @@ h4{
 
 .clinic-section{
 padding:80px 8%;
+
 }
 
 .clinic-grid{
@@ -240,7 +241,23 @@ gap:30px;
 
 }
 
-.clinic-card{
+.clinic-card1 {
+
+position:relative;
+border-radius:15px;
+overflow:hidden;
+cursor:pointer;
+}
+
+.clinic-card1 img{
+
+width:100%;
+height:320px;
+object-fit:cover;
+display:block;
+background-color: #ddd;
+}
+.clinic-card2 {
 
 position:relative;
 border-radius:15px;
@@ -249,7 +266,41 @@ cursor:pointer;
 
 }
 
-.clinic-card img{
+.clinic-card2 img{
+
+width:100%;
+height:320px;
+object-fit:cover;
+display:block;
+background-color: #ddd;
+}
+.clinic-card3 {
+
+position:relative;
+border-radius:15px;
+overflow:hidden;
+cursor:pointer;
+
+}
+
+.clinic-card3 img{
+
+width:100%;
+height:320px;
+object-fit:cover;
+display:block;
+background-color: #ddd;
+}
+.clinic-card4 {
+
+position:relative;
+border-radius:15px;
+overflow:hidden;
+cursor:pointer;
+
+}
+
+.clinic-card4 img{
 
 width:100%;
 height:320px;
@@ -299,17 +350,20 @@ color:#ddd;
 .Intro{
   display: flex;
   justify-content: space-between;
+  
 }
 
 .Intro img{
-  height: 550px;
-  width: 700px;
-  padding: 80px 70px 50px;
-  border-radius: 100px;
-  margin-top: 38px;
+  height: 480px;
+  width: 650px;
+  padding:30px;
+  border-radius: 20px;
+  margin-top: 88px;
   margin-left: -670px;
-  box-shadow: 1px 1px  10px rgba(0, 0, 0, 0.285);
+ box-shadow: 0px 5px 20px rgba(139, 139, 139, 0.537);
+ background-color: #fff4d7dc;
 }
+
 .about{
   height: 570px;
   width: 550px;
@@ -383,9 +437,7 @@ color:#ddd;
     width:95%;
     margin:auto;
     display:flex;
-    align-items:center;
-    
-    
+    align-items:center;  
 }
 
 .image-section img{
@@ -393,6 +445,7 @@ color:#ddd;
     top: 0;
     border-radius:15px;
     margin-left: 50px;
+    box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.337);
 }
 
 .content-section{
@@ -449,6 +502,7 @@ flex:1;
     top: 0;
     border-radius:15px;
     margin-left: 50px;
+    box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.337);
 }
 
 .content-section{
@@ -498,6 +552,7 @@ flex:1;
     width:450px;
     border-radius:15px;
     margin-left: 50px;
+    box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.337);
 }
 
 .content-section{
@@ -555,6 +610,7 @@ flex:1;
     top: 0;
     border-radius:15px;
     margin-left: 50px;
+    box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.237);
 }
 
 .content-section{

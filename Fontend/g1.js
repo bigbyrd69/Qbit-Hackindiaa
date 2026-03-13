@@ -56,16 +56,16 @@ gsap.to(".left-container img",{
 
 
 gsap.to(".Intro img",{
-    x:700,
+    x:720,
     duration:1.2,
     delay:1,
     scrollTrigger:{
         trigger:".Intro img",
         scroller:"body",
-       start: "top 42%", 
+       start: "top 51%", 
        end:" bottom 40%",
         scrub:3,
-       
+      
     }
 })
 
@@ -115,51 +115,19 @@ gsap.from(".heartbeat-background",{
 }
 }
 )
-
-// gsap.from(".card1", {
-// x: -520,
-//     opacity: 0,
-//     duration:1,
-//    delay:0.7, 
-  
-//    scrollTrigger:{
-//         trigger:".card1",
+// gsap.to(".clinic-card1",{
+//     x:700,
+//     duration:1.2,
+//     delay:1,
+//     scrollTrigger:{
+//         trigger:".clinic-card1",
 //         scroller:"body",
-//        start: "top 52%", 
-//         end:" bottom 30%",
+//        start: "top 65%", 
+//        end:" bottom 40%",
+//         scrub:3,
+//         markers:true,
        
-//         scrub:3,
-// }
-// })
-// gsap.from(".card2", {
-// y: 250,
-//     opacity: 0,
-//     duration:1,
-//    delay:0.7, 
-  
-//    scrollTrigger:{
-//         trigger:".card1",
-//         scroller:"body",
-//        start: "top 52%", 
-//         end:" bottom 30%",
-       
-//         scrub:3,
-// }
-// })
-// gsap.from(".card3", {
-// x: 560,
-//     opacity: 0,
-//     duration:1,
-//    delay:0.7, 
-  
-//    scrollTrigger:{
-//         trigger:".card1",
-//         scroller:"body",
-//        start: "top 52%", 
-//         end:" bottom 30%",
-      
-//         scrub:3,
-// }
+//     }
 // })
 
 gsap.to(".third h1",{
