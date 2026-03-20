@@ -1,0 +1,26 @@
+2024-01-15 11:00:01 INFO  [AppServer] Application started heap_used=512MB heap_max=2048MB
+2024-01-15 11:00:02 INFO  [RequestHandler] Processing 45 concurrent requests
+2024-01-15 11:00:03 INFO  [CacheService] Cache initialized size=128MB
+2024-01-15 11:00:04 INFO  [WorkerPool] 8 worker threads active
+2024-01-15 11:00:05 INFO  [AppServer] Memory usage heap_used=620MB heap_max=2048MB (30%)
+2024-01-15 11:05:00 INFO  [AppServer] Memory usage heap_used=780MB heap_max=2048MB (38%)
+2024-01-15 11:10:00 INFO  [AppServer] Memory usage heap_used=980MB heap_max=2048MB (48%)
+2024-01-15 11:15:00 WARN  [AppServer] Memory usage growing heap_used=1200MB heap_max=2048MB (59%)
+2024-01-15 11:20:00 WARN  [AppServer] High memory usage heap_used=1450MB heap_max=2048MB (71%)
+2024-01-15 11:22:00 WARN  [GarbageCollector] GC pause time 850ms — consider increasing heap size
+2024-01-15 11:23:00 WARN  [AppServer] Memory threshold exceeded heap_used=1650MB heap_max=2048MB (81%)
+2024-01-15 11:24:00 WARN  [GarbageCollector] GC pause time 2100ms — application is slow
+2024-01-15 11:24:30 WARN  [RequestHandler] Request queue growing queue_size=450 workers=8
+2024-01-15 11:25:00 ERROR [AppServer] Critical memory usage heap_used=1890MB heap_max=2048MB (92%)
+2024-01-15 11:25:10 ERROR [GarbageCollector] Full GC triggered — pausing all threads for 4200ms
+2024-01-15 11:25:14 ERROR [RequestHandler] Request timeout — GC pause exceeded threshold
+2024-01-15 11:25:15 ERROR [AppServer] Memory critically low heap_used=1980MB heap_max=2048MB (97%)
+2024-01-15 11:25:16 ERROR [WorkerPool] Worker thread-3 killed — out of memory
+2024-01-15 11:25:17 ERROR [WorkerPool] Worker thread-5 killed — out of memory
+2024-01-15 11:25:18 FATAL [AppServer] java.lang.OutOfMemoryError: Java heap space
+2024-01-15 11:25:18 FATAL [AppServer] Cannot allocate new object — heap exhausted
+2024-01-15 11:25:19 FATAL [AppServer] JVM crash detected — generating heap dump
+2024-01-15 11:25:20 FATAL [SystemMonitor] Process killed by OOM killer pid=14821 score=987
+2024-01-15 11:25:21 INFO  [ProcessManager] Restarting application instance...
+2024-01-15 11:25:35 INFO  [AppServer] Application restarted heap_used=512MB heap_max=2048MB
+2024-01-15 11:25:36 WARN  [AppServer] Previous crash detected — check heap dump at /var/log/heapdump.hprof

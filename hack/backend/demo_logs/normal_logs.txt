@@ -1,0 +1,20 @@
+2024-01-15 09:00:01 INFO  [AuthService] User login successful user_id=1042
+2024-01-15 09:00:02 INFO  [OrderService] Order created order_id=8821 user_id=1042
+2024-01-15 09:00:03 INFO  [PaymentService] Payment processed amount=499.00
+2024-01-15 09:00:04 INFO  [DatabaseService] Query executed in 12ms table=orders
+2024-01-15 09:00:05 INFO  [CacheService] Cache hit key=user:1042
+2024-01-15 09:00:06 INFO  [AuthService] Token refreshed user_id=1055
+2024-01-15 09:00:07 INFO  [OrderService] Order created order_id=8822 user_id=1055
+2024-01-15 09:00:08 INFO  [DatabaseService] Query executed in 15ms table=products
+2024-01-15 09:00:09 INFO  [PaymentService] Payment processed amount=299.00
+2024-01-15 09:00:10 INFO  [CacheService] Cache hit key=product:221
+2024-01-15 09:00:11 INFO  [AuthService] User login successful user_id=1088
+2024-01-15 09:00:12 INFO  [OrderService] Order created order_id=8823
+2024-01-15 09:00:13 INFO  [DatabaseService] Query executed in 11ms table=users
+2024-01-15 09:00:14 INFO  [PaymentService] Payment processed amount=149.00
+2024-01-15 09:00:15 INFO  [CacheService] Cache miss key=product:445 — fetching from DB
+2024-01-15 09:00:16 INFO  [DatabaseService] Query executed in 18ms table=products
+2024-01-15 09:00:17 INFO  [AuthService] Token refreshed user_id=1042
+2024-01-15 09:00:18 INFO  [OrderService] Order updated order_id=8821 status=shipped
+2024-01-15 09:00:19 INFO  [NotificationService] Email sent user_id=1042
+2024-01-15 09:00:20 INFO  [DatabaseService] Query executed in 13ms table=notifications

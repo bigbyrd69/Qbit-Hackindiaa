@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log-Whisperer — Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #181c23;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --green: #00ff88;
+    --green-dim: rgba(0,255,136,0.1);
+    --green-border: rgba(0,255,136,0.25);
+    --amber: #ffb340;
+    --amber-dim: rgba(255,179,64,0.1);
+    --red: #ff4d4d;
+    --red-dim: rgba(255,77,77,0.1);
+    --text: #e8eaf0;
+    --text2: #8b8fa8;
+    --text3: #4a4d5e;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid noise texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Navbar */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 56px;
+    background: rgba(10,12,15,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    z-index: 100;
+    gap: 32px;
+  }
+
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 2px;
+  }
+
+  .nav-links { display: flex; gap: 24px; margin-left: auto; }
+  .nav-links a {
+    font-size: 13px;
+    color: var(--text2);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a.active { color: var(--green); }
+
+  /* Main layout */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 88px 24px 60px;
+  }
+
+  /* Page header */
+  .page-header {
+    margin-bottom: 40px;
+  }
+
+  .page-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
+  .page-tag::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .page-header h1 {
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .page-header p {
+    margin-top: 8px;
+    font-size: 15px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 1.5px dashed var(--border2);
+    border-radius: 16px;
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--green);
+    background: var(--surface2);
+  }
+
+  .upload-zone.drag-over { transform: scale(1.01); }
+
+  .upload-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 16px;
+    background: var(--green-dim);
+    border: 1px solid var(--green-border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .upload-zone h3 {
+    font-size: 17px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .upload-zone p {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 20px;
+  }
+
+  .upload-btn {
+    background: var(--green);
+    color: #000;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: opacity 0.2s;
+  }
+
+  .upload-btn:hover { opacity: 0.85; }
+
+  .formats {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .fmt-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text3);
+  }
+
+  /* OR divider */
+  .or-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+    color: var(--text3);
+    font-size: 12px;
+  }
+
+  .or-divider::before, .or-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Paste zone */
+  .paste-zone {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .paste-header {
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .paste-header span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .paste-dots { display: flex; gap: 6px; }
+  .paste-dots span {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--border2);
+  }
+
+  textarea {
+    width: 100%;
+    height: 160px;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    resize: none;
+    line-height: 1.6;
+  }
+
+  textarea::placeholder { color: var(--text3); }
+
+  /* Analyze button */
+  .analyze-btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    background: var(--green);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--sans);
+    letter-spacing: 0.3px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .analyze-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Loading state */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Status bar */
+  .status-bar {
+    display: none;
+    margin-top: 16px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--green);
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-bar.show { display: flex; }
+
+  /* Results section */
+  #results { display: none; margin-top: 48px; }
+  #results.show { display: block; }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .results-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  /* Score cards */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .score-label {
+    font-size: 11px;
+    color: var(--text2);
+    font-family: var(--mono);
+    margin-bottom: 8px;
+  }
+
+  .score-val {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: var(--mono);
+  }
+
+  .score-val.green { color: var(--green); }
+  .score-val.amber { color: var(--amber); }
+  .score-val.red { color: var(--red); }
+
+  .score-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--mono);
+  }
+
+  .status-badge.normal { background: var(--green-dim); color: var(--green); border: 1px solid var(--green-border); }
+  .status-badge.warning { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,179,64,0.25); }
+  .status-badge.critical { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,77,77,0.25); }
+
+  /* Log lines */
+  .log-viewer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .log-viewer-header {
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .log-viewer-header span {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .log-lines {
+    max-height: 360px;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  .log-lines::-webkit-scrollbar { width: 4px; }
+  .log-lines::-webkit-scrollbar-track { background: transparent; }
+  .log-lines::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .log-line {
+    display: grid;
+    grid-template-columns: 80px 60px 120px 1fr 60px;
+    gap: 12px;
+    padding: 6px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    align-items: center;
+    border-left: 2px solid transparent;
+    transition: background 0.15s;
+  }
+
+  .log-line:hover { background: rgba(255,255,255,0.02); }
+  .log-line.anomaly { border-left-color: var(--red); background: rgba(255,77,77,0.04); }
+  .log-line.warning-line { border-left-color: var(--amber); background: rgba(255,179,64,0.04); }
+
+  .ll-time { color: var(--text3); }
+  .ll-level { font-weight: 700; }
+  .ll-level.error { color: var(--red); }
+  .ll-level.warn { color: var(--amber); }
+  .ll-level.info { color: var(--green); }
+  .ll-level.debug { color: var(--text3); }
+  .ll-service { color: #7eb8f7; }
+  .ll-msg { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ll-score { text-align: right; }
+
+  .score-pill {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .score-pill.high { background: var(--red-dim); color: var(--red); }
+  .score-pill.med { background: var(--amber-dim); color: var(--amber); }
+  .score-pill.low { background: transparent; color: var(--text3); }
+
+  /* Crash report button */
+  .report-btn {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    color: var(--red);
+    border: 1.5px solid var(--red);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .report-btn:hover { background: var(--red-dim); }
+  .report-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Crash report card */
+  #crash-report { display: none; margin-top: 8px; }
+  #crash-report.show { display: block; }
+
+  .crash-card {
+    background: var(--surface);
+    border: 1px solid rgba(255,77,77,0.2);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .crash-header {
+    padding: 16px 20px;
+    background: rgba(255,77,77,0.06);
+    border-bottom: 1px solid rgba(255,77,77,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .crash-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .crash-body { padding: 20px; }
+
+  .crash-section { margin-bottom: 20px; }
+
+  .crash-section:last-child { margin-bottom: 0; }
+
+  .cs-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .cs-value {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .root-cause-box {
+    background: var(--red-dim);
+    border: 1px solid rgba(255,77,77,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .fix-box {
+    background: var(--green-dim);
+    border: 1px solid var(--green-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .services-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .service-badge {
+    padding: 4px 10px;
+    background: rgba(126,184,247,0.1);
+    border: 1px solid rgba(126,184,247,0.2);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #7eb8f7;
+  }
+
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+
+  .tl-item {
+    display: flex;
+    gap: 14px;
+    position: relative;
+    padding-bottom: 16px;
+  }
+
+  .tl-item:last-child { padding-bottom: 0; }
+
+  .tl-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tl-line {
+    position: absolute;
+    left: 4px;
+    top: 14px;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .tl-item:last-child .tl-line { display: none; }
+
+  .tl-dot.HIGH { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .tl-dot.MEDIUM { background: var(--amber); }
+  .tl-dot.LOW { background: var(--text3); }
+
+  .tl-content { flex: 1; }
+  .tl-time { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+  .tl-event { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+  .confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--mono);
+  }
+
+  /* NL Query box */
+  .query-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
+
+  .query-input-row {
+    display: flex;
+    align-items: center;
+    padding: 4px 4px 4px 16px;
+    gap: 8px;
+  }
+
+  .query-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text);
+    padding: 10px 0;
+  }
+
+  .query-input::placeholder { color: var(--text3); }
+
+  .query-submit {
+    padding: 8px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--green);
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .query-submit:hover { background: var(--green-dim); }
+
+  .query-result {
+    display: none;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+
+  .query-result.show { display: block; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .score-grid { grid-template-columns: repeat(2, 1fr); }
+    .log-line { grid-template-columns: 60px 50px 1fr 40px; }
+    .ll-service { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">LOG-WHISPERER</div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="analyzer.html" class="active">Analyzer</a>
+    <a href="#" onclick="openStream()">Live Stream</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <div class="page-tag">BACKEND CONNECTED</div>
+    <h1>Log Analyzer</h1>
+    <p>Upload your log file or paste log content. AI detects anomalies and generates a crash report instantly.</p>
+  </div>
+
+  <!-- Upload zone -->
+  <div class="upload-zone" id="uploadZone">
+    <div class="upload-icon">📂</div>
+    <h3>Drop your log file here</h3>
+    <p>Supports .txt, .log, .json formats</p>
+    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Choose File</button>
+    <input type="file" id="fileInput" accept=".txt,.log,.json" style="display:none" onchange="handleFile(this)">
+    <div class="formats">
+      <span class="fmt-tag">Apache</span>
+      <span class="fmt-tag">Nginx</span>
+      <span class="fmt-tag">Spring Boot</span>
+      <span class="fmt-tag">JSON</span>
+      <span class="fmt-tag">Syslog</span>
+      <span class="fmt-tag">Generic</span>
+    </div>
+  </div>
+
+  <div class="or-divider">or paste logs directly</div>
+
+  <!-- Paste zone -->
+  <div class="paste-zone">
+    <div class="paste-header">
+      <div class="paste-dots">
+        <span style="background:#ff5f57"></span>
+        <span style="background:#febc2e"></span>
+        <span style="background:#28c840"></span>
+      </div>
+      <span>logs.txt</span>
+      <span id="lineCount">0 lines</span>
+    </div>
+    <textarea id="logText" placeholder="2024-01-15 10:00:14 ERROR [DatabaseService] Connection timeout after 3000ms..." oninput="updateLineCount()"></textarea>
+  </div>
+
+  <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">
+    <div class="spinner" id="spinner"></div>
+    <span id="analyzeBtnText">⚡ Analyze Logs</span>
+  </button>
+
+  <div class="status-bar" id="statusBar">
+    <span id="statusText">Uploading logs...</span>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    <div class="results-header">
+      <h2>Analysis Results</h2>
+      <div id="statusBadge"></div>
+    </div>
+
+    <!-- Score cards -->
+    <div class="score-grid">
+      <div class="score-card">
+        <div class="score-label">TOTAL LINES</div>
+        <div class="score-val green" id="totalLines">—</div>
+        <div class="score-sub">parsed successfully</div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">ANOMALIES</div>
+        <div class="score-val amber" id="anomalyCount">—</div>
+        <div class="score-sub">flagged lines</div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">PEAK SCORE</div>
+        <div class="score-val red" id="peakScore">—</div>
+        <div class="score-sub">out of 100</div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">SESSION ID</div>
+        <div class="score-val" id="sessionDisplay" style="font-size:16px;color:var(--text2)">—</div>
+        <div class="score-sub">active session</div>
+      </div>
+    </div>
+
+    <!-- Log viewer -->
+    <div class="log-viewer">
+      <div class="log-viewer-header">
+        <span>FLAGGED LOG LINES</span>
+        <span id="flaggedCount">0 anomalies</span>
+      </div>
+      <div class="log-lines" id="logLines"></div>
+    </div>
+
+    <!-- Crash report button -->
+    <button class="report-btn" id="reportBtn" onclick="generateReport()">
+      <div class="spinner" id="reportSpinner" style="border-color:rgba(255,77,77,0.3);border-top-color:var(--red)"></div>
+      <span id="reportBtnText">🔴 Generate AI Crash Report</span>
+    </button>
+
+    <!-- Crash report -->
+    <div id="crash-report">
+      <div class="crash-card">
+        <div class="crash-header">
+          <h3>⚠ Crash Report</h3>
+          <div class="confidence-badge" id="confidenceBadge"></div>
+        </div>
+        <div class="crash-body">
+          <div class="crash-section">
+            <div class="cs-label">First Anomalous Event</div>
+            <div class="cs-value" id="firstEvent" style="font-family:var(--mono);font-size:12px;color:var(--amber)"></div>
+          </div>
+          <div class="crash-section">
+            <div class="cs-label">Probable Root Cause</div>
+            <div class="root-cause-box" id="rootCause"></div>
+          </div>
+          <div class="crash-section">
+            <div class="cs-label">Affected Services</div>
+            <div class="services-list" id="affectedServices"></div>
+          </div>
+          <div class="crash-section">
+            <div class="cs-label">Event Timeline</div>
+            <div class="timeline" id="timeline"></div>
+          </div>
+          <div class="crash-section">
+            <div class="cs-label">Recommended Fix</div>
+            <div class="fix-box" id="recommendedFix"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NL Query -->
+    <div class="query-box">
+      <div class="query-input-row">
+        <span style="color:var(--green);font-family:var(--mono);font-size:13px">$</span>
+        <input class="query-input" id="queryInput" placeholder='Ask anything: "show me all DB errors" or "when did the crash start?"' onkeydown="if(event.key==='Enter') queryLogs()">
+        <button class="query-submit" onclick="queryLogs()">ASK AI →</button>
+      </div>
+      <div class="query-result" id="queryResult"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+let sessionId = null;
+
+// ── Drag and drop ──────────────────────────────────────────────────────────
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+
+function handleFile(input) {
+  if (input.files[0]) processFile(input.files[0]);
+}
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('logText').value = e.target.result;
+    updateLineCount();
+  };
+  reader.readAsText(file);
+}
+
+function updateLineCount() {
+  const lines = document.getElementById('logText').value.split('\n').filter(l => l.trim()).length;
+  document.getElementById('lineCount').textContent = `${lines} lines`;
+}
+
+// ── Set status ─────────────────────────────────────────────────────────────
+function setStatus(msg, show = true) {
+  const bar = document.getElementById('statusBar');
+  document.getElementById('statusText').textContent = msg;
+  bar.classList.toggle('show', show);
+}
+
+// ── Analyze ────────────────────────────────────────────────────────────────
+async function analyze() {
+  const text = document.getElementById('logText').value.trim();
+  if (!text) { alert('Please upload a log file or paste log content first.'); return; }
+
+  const btn = document.getElementById('analyzeBtn');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('analyzeBtnText');
+
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'Uploading logs...';
+  setStatus('📤 Uploading logs to backend...');
+
+  try {
+    // Step 1: Upload
+    const uploadRes = await fetch(`${API}/upload-text`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+
+    if (!uploadRes.ok) throw new Error('Upload failed');
+    const uploadData = await uploadRes.json();
+    sessionId = uploadData.session_id;
+
+    setStatus(`✅ Uploaded ${uploadData.total_lines} lines. Running anomaly detection...`);
+    btnText.textContent = 'Detecting anomalies...';
+
+    // Step 2: Analyze
+    const analyzeRes = await fetch(`${API}/analyze/${sessionId}`);
+    if (!analyzeRes.ok) throw new Error('Analysis failed');
+    const data = await analyzeRes.json();
+
+    setStatus(`✅ Analysis complete — ${data.anomaly_count} anomalies detected.`);
+    showResults(data);
+
+  } catch (err) {
+    setStatus(`❌ Error: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = '⚡ Analyze Logs';
+  }
+}
+
+// ── Show results ───────────────────────────────────────────────────────────
+function showResults(data) {
+  document.getElementById('results').classList.add('show');
+  document.getElementById('totalLines').textContent = data.total_lines;
+  document.getElementById('anomalyCount').textContent = data.anomaly_count;
+  document.getElementById('peakScore').textContent = data.peak_score;
+  document.getElementById('sessionDisplay').textContent = '#' + sessionId;
+  document.getElementById('flaggedCount').textContent = `${data.flagged_lines?.length || 0} anomalies`;
+
+  // Status badge
+  const badge = document.getElementById('statusBadge');
+  const s = data.status;
+  badge.innerHTML = `<span class="status-badge ${s}">${s === 'critical' ? '🔴' : s === 'warning' ? '🟡' : '🟢'} ${s.toUpperCase()}</span>`;
+
+  // Log lines
+  const container = document.getElementById('logLines');
+  container.innerHTML = '';
+
+  const lines = data.flagged_lines || [];
+  if (lines.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--text3)">No anomalous lines detected — system looks healthy</div>';
+    return;
+  }
+
+  lines.forEach(line => {
+    const score = line.anomaly_score;
+    const cls = score >= 80 ? 'anomaly' : score >= 60 ? 'warning-line' : '';
+    const pillCls = score >= 80 ? 'high' : score >= 60 ? 'med' : 'low';
+    const levelCls = line.level?.toLowerCase() === 'error' || line.level?.toLowerCase() === 'fatal' ? 'error'
+                   : line.level?.toLowerCase() === 'warn' || line.level?.toLowerCase() === 'warning' ? 'warn'
+                   : line.level?.toLowerCase() === 'debug' ? 'debug' : 'info';
+
+    const div = document.createElement('div');
+    div.className = `log-line ${cls}`;
+    div.innerHTML = `
+      <span class="ll-time">${(line.timestamp || '').substring(11, 19) || line.timestamp?.substring(0, 8) || '—'}</span>
+      <span class="ll-level ${levelCls}">${line.level || 'INFO'}</span>
+      <span class="ll-service">${line.service || 'unknown'}</span>
+      <span class="ll-msg" title="${(line.message || '').replace(/"/g, '&quot;')}">${line.message || ''}</span>
+      <span class="ll-score"><span class="score-pill ${pillCls}">${score}</span></span>
+    `;
+    container.appendChild(div);
+  });
+
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Generate crash report ──────────────────────────────────────────────────
+async function generateReport() {
+  if (!sessionId) return;
+
+  const btn = document.getElementById('reportBtn');
+  const spinner = document.getElementById('reportSpinner');
+  const btnText = document.getElementById('reportBtnText');
+
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = 'AI is analyzing root cause...';
+  setStatus('🧠 Calling AI to generate crash report...');
+
+  try {
+    const res = await fetch(`${API}/report/${sessionId}`);
+    if (!res.ok) throw new Error('Report generation failed');
+    const data = await res.json();
+    const report = data.crash_report;
+
+    setStatus('✅ Crash report generated successfully.');
+    showCrashReport(report);
+
+  } catch (err) {
+    setStatus(`❌ Error: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = '🔴 Generate AI Crash Report';
+  }
+}
+
+// ── Show crash report ──────────────────────────────────────────────────────
+function showCrashReport(report) {
+  document.getElementById('crash-report').classList.add('show');
+
+  document.getElementById('firstEvent').textContent = report.first_anomalous_event || '—';
+  document.getElementById('rootCause').textContent = report.probable_root_cause || '—';
+  document.getElementById('recommendedFix').textContent = report.recommended_fix || '—';
+
+  // Confidence badge
+  const conf = report.confidence || 'MEDIUM';
+  const confColor = conf === 'HIGH' ? 'var(--green)' : conf === 'MEDIUM' ? 'var(--amber)' : 'var(--text2)';
+  document.getElementById('confidenceBadge').innerHTML =
+    `<span style="background:rgba(0,0,0,0.3);border:1px solid ${confColor};color:${confColor};padding:3px 10px;border-radius:20px;font-family:var(--mono);font-size:11px">${conf} CONFIDENCE · ${report.anomaly_category}</span>`;
+
+  // Services
+  const svcs = document.getElementById('affectedServices');
+  svcs.innerHTML = (report.affected_services || []).map(s =>
+    `<span class="service-badge">${s}</span>`).join('') || '<span style="color:var(--text3);font-size:13px">None identified</span>';
+
+  // Timeline
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = (report.timeline || []).map((item, i, arr) => `
+    <div class="tl-item">
+      <div>
+        <div class="tl-dot ${item.severity || 'LOW'}"></div>
+        ${i < arr.length - 1 ? '<div class="tl-line"></div>' : ''}
+      </div>
+      <div class="tl-content">
+        <div class="tl-time">${item.time || ''}</div>
+        <div class="tl-event">${item.event || ''}</div>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--text3);font-size:13px">No timeline available</div>';
+
+  document.getElementById('crash-report').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Natural language query ─────────────────────────────────────────────────
+async function queryLogs() {
+  if (!sessionId) { alert('Please analyze logs first.'); return; }
+  const question = document.getElementById('queryInput').value.trim();
+  if (!question) return;
+
+  const resultDiv = document.getElementById('queryResult');
+  resultDiv.className = 'query-result show';
+  resultDiv.innerHTML = '<span style="color:var(--text3);font-family:var(--mono);font-size:12px">Thinking...</span>';
+
+  try {
+    const res = await fetch(`${API}/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, question })
+    });
+    const data = await res.json();
+    resultDiv.innerHTML = `
+      <div style="color:var(--green);font-family:var(--mono);font-size:11px;margin-bottom:6px">AI RESPONSE</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.7">${data.answer}</div>
+      ${data.matching_lines?.length ? `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text3)">${data.matching_lines.length} matching lines found</div>` : ''}
+    `;
+  } catch (err) {
+    resultDiv.innerHTML = `<span style="color:var(--red);font-size:13px">Error: ${err.message}</span>`;
+  }
+}
+
+function openStream() {
+  if (!sessionId) { alert('Analyze logs first to get a session ID.'); return; }
+  window.open(`${API}/stream/${sessionId}`, '_blank');
+}
+</script>
+</body>
+</html>

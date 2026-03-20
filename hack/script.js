@@ -1,63 +1,67 @@
-document.querySelector('.login-btn').addEventListener('click', function() {
-    window.location.href = 'login.html';
+function on(selector, event, handler) {
+  const el = document.querySelector(selector);
+  if (el) el.addEventListener(event, handler);
+}
+ 
+// ── Navigation links ───────────────────────────────────────────────────────
+on('.login-btn', 'click', () => window.location.href = 'analyzer.html');
+on('.primary',   'click', () => window.location.href = 'analyzer.html');
+on('.secondary', 'click', () => window.location.href = 'analyzer.html');
+ 
+// ── Active nav link highlight ──────────────────────────────────────────────
+const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+document.querySelectorAll('nav ul li a').forEach(link => {
+  const href = link.getAttribute('href');
+  if (href === currentPage) {
+    link.style.color = '#22c55e';
+    link.style.fontWeight = '500';
+  }
+  if (href === '#' || href === './') {
+    link.href = link.textContent.trim().toLowerCase().includes('home')
+      ? 'index.html' : 'analyzer.html';
+  }
 });
-
-document.querySelector('.btn').addEventListener('click', function() {
-    window.location.href = 'problem.html';
-});
-
-
-const profileIcon = document.getElementById("profile-icon");
-const sidebar = document.getElementById("profile-sidebar");
-const closeSidebar = document.getElementById("close-sidebar");
-const logoutBtn = document.getElementById("logout-btn");
-
-// Open Sidebar
-profileIcon.addEventListener("click", () => {
-  sidebar.classList.add("active");
-});
-
-// Close Sidebar
-closeSidebar.addEventListener("click", () => {
-  sidebar.classList.remove("active");
-});
-
-// Logout
-logoutBtn.addEventListener("click", () => {
-  alert("Logged out successfully!");
-  sidebar.classList.remove("active");
-});
-
+ 
+// ── Smooth scroll for anchor links ────────────────────────────────────────
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener("click", function (e) {
+  anchor.addEventListener('click', function (e) {
+    const href = this.getAttribute('href');
+    if (href === '#') return;
+    const target = document.querySelector(href);
+    if (!target) return;
     e.preventDefault();
-    const target = document.querySelector(this.getAttribute("href"));
-    const offset = 80; // adjust based on navbar height
+    const offset = 80;
     const topPos = target.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top: topPos, behavior: "smooth" });
+    window.scrollTo({ top: topPos, behavior: 'smooth' });
   });
 });
-
-
-
-// NAVBAR LINKS FIX
-document.querySelectorAll('.nav-links a').forEach(link => {
-  link.addEventListener('click', function(e) {
-
-    e.preventDefault();
-
-    const targetId = this.getAttribute('href');
-    const targetSection = document.querySelector(targetId);
-
-    if(targetSection){
-      targetSection.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-    }
-
+ 
+// ── Navbar scroll effect ───────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const navbar = document.querySelector('.navbar');
+  if (!navbar) return;
+  if (window.scrollY > 50) {
+    navbar.style.background = 'rgba(0,0,0,0.97)';
+    navbar.style.boxShadow = '0 1px 20px rgba(0,0,0,0.5)';
+  } else {
+    navbar.style.background = 'rgba(0,0,0,0.847)';
+    navbar.style.boxShadow = 'none';
+  }
+});
+ 
+// ── Animate hero on load ───────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const els = ['.badge', '.hero h1', '.hero p', '.buttons', '.features'];
+  els.forEach((sel, i) => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    setTimeout(() => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }, 100 + i * 120);
   });
 });
-
-
-
+ 

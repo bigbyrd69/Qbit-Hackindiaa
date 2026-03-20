@@ -1,0 +1,31 @@
+2024-01-15 10:00:01 INFO  [AuthService] User login successful user_id=2001
+2024-01-15 10:00:02 INFO  [OrderService] Order created order_id=9901
+2024-01-15 10:00:03 INFO  [DatabaseService] Query executed in 14ms table=orders
+2024-01-15 10:00:04 INFO  [PaymentService] Payment processed amount=599.00
+2024-01-15 10:00:05 INFO  [DatabaseService] Query executed in 16ms table=products
+2024-01-15 10:00:06 INFO  [CacheService] Cache hit key=user:2001
+2024-01-15 10:00:07 INFO  [OrderService] Order created order_id=9902
+2024-01-15 10:00:08 WARN  [DatabaseService] Slow query detected 450ms table=orders — consider indexing
+2024-01-15 10:00:09 INFO  [AuthService] Token refreshed user_id=2001
+2024-01-15 10:00:10 WARN  [DatabaseService] Connection pool utilization at 78% — pool_size=20 active=16
+2024-01-15 10:00:11 INFO  [OrderService] Order created order_id=9903
+2024-01-15 10:00:12 WARN  [DatabaseService] Slow query detected 820ms table=inventory
+2024-01-15 10:00:13 WARN  [DatabaseService] Connection pool utilization at 92% — pool_size=20 active=18
+2024-01-15 10:00:14 ERROR [DatabaseService] Connection timeout after 3000ms — host=db-primary:5432
+2024-01-15 10:00:14 ERROR [OrderService] Failed to create order — database unavailable
+2024-01-15 10:00:15 ERROR [DatabaseService] Connection timeout after 3000ms — host=db-primary:5432
+2024-01-15 10:00:15 ERROR [PaymentService] Failed to process payment — database unavailable
+2024-01-15 10:00:16 ERROR [DatabaseService] Connection refused — host=db-primary:5432
+2024-01-15 10:00:16 ERROR [AuthService] Failed to validate token — database unavailable
+2024-01-15 10:00:17 ERROR [DatabaseService] Connection refused — host=db-primary:5432
+2024-01-15 10:00:17 ERROR [OrderService] Failed to create order order_id=9904
+2024-01-15 10:00:18 ERROR [DatabaseService] Too many connections — max_connections=100 current=100
+2024-01-15 10:00:18 FATAL [DatabaseService] Database primary node is unreachable — initiating failover
+2024-01-15 10:00:19 ERROR [PaymentService] Circuit breaker OPEN — DatabaseService unavailable
+2024-01-15 10:00:19 ERROR [OrderService] Circuit breaker OPEN — DatabaseService unavailable
+2024-01-15 10:00:20 ERROR [AuthService] Circuit breaker OPEN — DatabaseService unavailable
+2024-01-15 10:00:21 WARN  [DatabaseService] Attempting failover to db-replica:5432
+2024-01-15 10:00:22 ERROR [DatabaseService] Failover failed — replica not in sync lag=45s
+2024-01-15 10:00:23 FATAL [APIGateway] Health check failed — 3 of 4 services reporting UNHEALTHY
+2024-01-15 10:00:24 ERROR [LoadBalancer] Removing unhealthy instance app-server-02 from pool
+2024-01-15 10:00:25 FATAL [SystemMonitor] CRITICAL: System entering degraded state — manual intervention required
