@@ -110,14 +110,29 @@ def score_lines(lines: list[LogLine]) -> list[LogLine]:
     """
     if_scores = isolation_forest_scores(lines)
 
+   # --- UPDATED LINE 100 ---
     for idx, line in enumerate(lines):
         base = level_score(line)
         kw = keyword_score(line)
         spike = window_spike_score(lines, idx)
         iso = if_scores.get(line.id, 0)
 
-        total = min(base + kw + spike + iso, 100)
-        line.anomaly_score = round(total, 1)
+        # 1. Start with the calculated sum
+        total = base + kw + spike + iso
+
+        # 2. NEW: Force High Scores for Severe Events
+        # If the level is FATAL or CRITICAL, jump straight to 85+
+        if line.level.upper() in ("FATAL", "CRITICAL"):
+            total = max(total, 85.0)
+            
+        # If specific disaster keywords exist, jump to 95+
+        msg_lower = (line.message + line.raw).lower()
+        disaster_keys = ["outofmemory", "panic", "segfault", "deadlock"]
+        if any(k in msg_lower for k in disaster_keys):
+            total = max(total, 95.0)
+
+        # 3. Final round and assignment
+        line.anomaly_score = round(min(total, 100), 1)
 
     return lines
 

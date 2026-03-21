@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-<title>QBIT — Log Analyzer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+ <title>QBIT — Decode System Failures with AI</title>
+    <link rel="icon" href="./assets/logo.jpeg" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -68,13 +68,12 @@ nav {
   gap: 32px;
 }
 
-.nav-logo {
-  font-family: var(--mono);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--green);
-  letter-spacing: 2px;
-  text-decoration: none;
+.nav-logo img {
+ 
+ font-size:22px;
+height: 50px;
+width: 55px;
+margin-left: 60px;
 }
 
 .nav-links { display: flex; gap: 4px; margin-left: auto; }
@@ -988,7 +987,7 @@ textarea::placeholder { color: var(--text3); }
 <div class="toast-container" id="toastContainer"></div>
 
 <nav>
-  <a href="index.html" class="nav-logo">QUBIT +</a>
+  <div class="nav-logo"><img src="./assets/logo.jpeg" alt="QBIT Logo"></div>
   <div class="nav-links">
     <a href="index.html">Home</a>
     <a href="analyzer.html" class="active">Analyzer</a>

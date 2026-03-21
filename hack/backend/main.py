@@ -4,6 +4,13 @@ from storage import create_session, get_session, init_db, save_crash_report
 from parser import parse_logs
 from anomaly import build_anomaly_result
 from claude_service import generate_crash_report
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # 👈 THIS LINE FIXES YOUR ISSUE
 import os
 
 app = FastAPI(title="Log-Whisperer API")

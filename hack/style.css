@@ -6,8 +6,10 @@ body{
    cursor: pointer;
    caret-color: transparent;
    /* position: relative; */
-   background-color: white;
+   background: radial-gradient(circle at center, #0f2f1c, #0b0f0d);
 }
+   
+
 html {
   scroll-behavior: smooth;
 }
@@ -37,10 +39,10 @@ background:rgba(0, 0, 0, 0.847);
 z-index:1000;
 }
 
-.logo{
+.logo img{
 font-size:22px;
-font-weight:600;
-color: white;
+height: 50px;
+width: 55px;
 }
 
 .plus{
@@ -77,16 +79,6 @@ font-size:15px;
 margin-left: 20px;
 }
 
-
-
-/* .hero{
-padding:80px 10%;
-margin-top: 50px;
-background:linear-gradient(to right,#3df5a56e,#f9d2d5d6);
-} */
-
-
-
 /* Hero Section */
 .hero {
      position: relative;
@@ -94,7 +86,7 @@ background:linear-gradient(to right,#3df5a56e,#f9d2d5d6);
   text-align: center;
   padding: 100px 20px;
   margin-top: 68px;
-  height: 630px;
+  height: 680px;
   /* background: radial-gradient(circle at center, #0f2f1c, #0b0f0d); */
    z-index: 1;
 }
@@ -104,10 +96,10 @@ background:linear-gradient(to right,#3df5a56e,#f9d2d5d6);
   position: absolute;
   width: 100%;
   height: 100%;
+   
   top: 0;
   left: 0;
   z-index: 0;
-  pointer-events: none; /* <--- NEW LINE: Lets clicks pass through the invisible overlay */
 }
 
 .bg-video {
@@ -155,8 +147,6 @@ background:linear-gradient(to right,#3df5a56e,#f9d2d5d6);
 /* Buttons */
 .buttons {
   margin-top: 25px;
-  position: relative; 
-  z-index: 10;        /
 }
 
 .primary {
@@ -169,8 +159,6 @@ background:linear-gradient(to right,#3df5a56e,#f9d2d5d6);
   cursor: pointer;
   box-shadow: 10px 10px 10px rgba(125, 211, 33, 0.426);
 }
-
-
 
 .secondary {
   background: transparent;
@@ -197,6 +185,11 @@ background:linear-gradient(to right,#3df5a56e,#f9d2d5d6);
     font-size: 35px;
   }
 }
+/*.second {
+  height:600px;
+  width: 100%;
+  background: radial-gradient(circle at center, #0f2f1c, #0b0f0d);
+}*/
 
 /*code analysis section*/
 
@@ -337,5 +330,3 @@ background:linear-gradient(to right,#3df5a56e,#f9d2d5d6);
   color: #aaaaaa93;
   font-size: 14px;
 }
-
-
