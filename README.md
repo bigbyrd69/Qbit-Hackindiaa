@@ -1,4 +1,4 @@
-# QBIT (Log-Whisperer) 🚀
+# QBIT  🚀
 ### Privacy-First, Offline AI Log Analyzer & Root Cause Identifier
 
 **QBIT** is a high-performance observability tool built for the **HackIndia** hackathon. It combines **Unsupervised Machine Learning** for anomaly detection with a **Local LLM (Ollama)** to provide real-time, air-gapped root cause analysis. No data ever leaves your machine.
