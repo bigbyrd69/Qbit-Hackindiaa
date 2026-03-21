@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+ <title>QBIT — Decode System Failures with AI</title>
+    <link rel="icon" href="./assets/logo.jpeg" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0a0c0f;
+  --surface: #111318;
+  --surface2: #181c23;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --green: #00ff88;
+  --green-dim: rgba(0,255,136,0.1);
+  --green-border: rgba(0,255,136,0.25);
+  --amber: #ffb340;
+  --amber-dim: rgba(255,179,64,0.1);
+  --red: #ff4d4d;
+  --red-dim: rgba(255,77,77,0.1);
+  --blue: #7eb8f7;
+  --blue-dim: rgba(126,184,247,0.1);
+  --text: #e8eaf0;
+  --text2: #8b8fa8;
+  --text3: #4a4d5e;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,255,136,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,136,0.015) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Nav ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(10,12,15,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  z-index: 1000;
+  gap: 32px;
+}
+
+.nav-logo img {
+ 
+ font-size:22px;
+height: 50px;
+width: 55px;
+margin-left: 60px;
+}
+
+.nav-links { display: flex; gap: 4px; margin-left: auto; }
+.nav-links a {
+  font-size: 13px;
+  color: var(--text2);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.nav-links a:hover { color: var(--text); background: var(--surface); }
+.nav-links a.active { color: var(--green); }
+
+/* ── Tabs ── */
+.tab-bar {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 32px;
+  background: var(--surface);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  width: fit-content;
+}
+
+.tab-btn {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 7px;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { background: var(--surface2); color: var(--green); border: 1px solid var(--border2); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Main layout ── */
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 24px 60px;
+}
+
+/* ── Page header ── */
+.page-header { margin-bottom: 32px; }
+
+.page-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--green);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.page-tag::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.page-header h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.5px; }
+.page-header p { margin-top: 6px; font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+/* ── Upload zone ── */
+.upload-zone {
+  border: 1.5px dashed var(--border2);
+  border-radius: 14px;
+  padding: 40px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--green);
+  background: var(--surface2);
+}
+
+.upload-zone.drag-over { transform: scale(1.01); }
+
+.upload-icon {
+  width: 48px; height: 48px;
+  margin: 0 auto 14px;
+  background: var(--green-dim);
+  border: 1px solid var(--green-border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.upload-zone h3 { font-size: 16px; font-weight: 500; margin-bottom: 5px; }
+.upload-zone p { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+
+.upload-btn {
+  background: var(--green);
+  color: #000;
+  border: none;
+  padding: 9px 22px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: opacity 0.2s;
+}
+
+.upload-btn:hover { opacity: 0.85; }
+
+.formats {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.fmt-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text3);
+}
+
+/* ── OR divider ── */
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+  color: var(--text3);
+  font-size: 12px;
+}
+
+.or-divider::before, .or-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Paste zone ── */
+.paste-zone {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.paste-header {
+  padding: 10px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.paste-header span {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.paste-dots { display: flex; gap: 6px; }
+.paste-dots span {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--border2);
+}
+
+textarea {
+  width: 100%;
+  height: 150px;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  resize: none;
+  line-height: 1.6;
+}
+
+textarea::placeholder { color: var(--text3); }
+
+/* ── Action row ── */
+.action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.analyze-btn {
+  flex: 1;
+  padding: 13px;
+  background: var(--green);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.analyze-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.sample-btn {
+  padding: 13px 18px;
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.sample-btn:hover { color: var(--text); background: var(--surface); }
+
+/* ── Spinner ── */
+.spinner {
+  width: 15px; height: 15px;
+  border: 2px solid rgba(0,0,0,0.3);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+
+.spinner.light {
+  border-color: rgba(255,255,255,0.2);
+  border-top-color: var(--text);
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Status bar ── */
+.status-bar {
+  display: none;
+  margin-top: 14px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--green);
+  align-items: center;
+  gap: 8px;
+}
+
+.status-bar.show { display: flex; }
+
+/* ── Results ── */
+#results { display: none; margin-top: 40px; }
+#results.show { display: block; }
+
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.results-header h2 { font-size: 18px; font-weight: 600; }
+
+.header-actions { display: flex; gap: 8px; }
+
+.icon-btn {
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-btn:hover { color: var(--text); background: var(--surface); }
+.icon-btn.green { color: var(--green); border-color: var(--green-border); }
+.icon-btn.green:hover { background: var(--green-dim); }
+
+/* ── Score cards ── */
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.score-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.score-label { font-size: 10px; color: var(--text2); font-family: var(--mono); margin-bottom: 6px; letter-spacing: 0.5px; }
+.score-val { font-size: 26px; font-weight: 700; font-family: var(--mono); }
+.score-val.green { color: var(--green); }
+.score-val.amber { color: var(--amber); }
+.score-val.red { color: var(--red); }
+.score-sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+/* ── Status badge ── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--mono);
+}
+
+.status-badge.normal { background: var(--green-dim); color: var(--green); border: 1px solid var(--green-border); }
+.status-badge.warning { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,179,64,0.25); }
+.status-badge.critical { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,77,77,0.25); }
+
+/* ── Anomaly chart ── */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.chart-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+  letter-spacing: 0.5px;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 14px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Log viewer ── */
+.log-viewer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.log-viewer-header {
+  padding: 10px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.log-viewer-header span {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.log-filter-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-pill {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text3);
+  transition: all 0.15s;
+}
+
+.filter-pill:hover { color: var(--text2); }
+.filter-pill.active-all { border-color: var(--green-border); color: var(--green); background: var(--green-dim); }
+.filter-pill.active-err { border-color: rgba(255,77,77,0.3); color: var(--red); background: var(--red-dim); }
+.filter-pill.active-warn { border-color: rgba(255,179,64,0.3); color: var(--amber); background: var(--amber-dim); }
+
+.log-lines {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.log-lines::-webkit-scrollbar { width: 4px; }
+.log-lines::-webkit-scrollbar-track { background: transparent; }
+.log-lines::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.log-line {
+  display: grid;
+  grid-template-columns: 78px 58px 110px 1fr 58px;
+  gap: 10px;
+  padding: 5px 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  align-items: center;
+  border-left: 2px solid transparent;
+  transition: background 0.12s;
+}
+
+.log-line:hover { background: rgba(255,255,255,0.02); }
+.log-line.anomaly { border-left-color: var(--red); background: rgba(255,77,77,0.04); }
+.log-line.warning-line { border-left-color: var(--amber); background: rgba(255,179,64,0.04); }
+.log-line.new-line { animation: slideIn 0.3s ease; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.ll-time { color: var(--text3); }
+.ll-level { font-weight: 700; }
+.ll-level.error, .ll-level.fatal { color: var(--red); }
+.ll-level.warn, .ll-level.warning { color: var(--amber); }
+.ll-level.info { color: var(--green); }
+.ll-level.debug { color: var(--text3); }
+.ll-service { color: var(--blue); }
+.ll-msg { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ll-score { text-align: right; }
+
+.score-pill {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.score-pill.high { background: var(--red-dim); color: var(--red); }
+.score-pill.med { background: var(--amber-dim); color: var(--amber); }
+.score-pill.low { background: transparent; color: var(--text3); }
+
+/* ── Report button ── */
+.report-btn {
+  width: 100%;
+  padding: 13px;
+  background: transparent;
+  color: var(--red);
+  border: 1.5px solid var(--red);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.report-btn:hover { background: var(--red-dim); }
+.report-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Crash report ── */
+#crash-report { display: none; margin-top: 6px; }
+#crash-report.show { display: block; }
+
+.crash-card {
+  background: var(--surface);
+  border: 1px solid rgba(255,77,77,0.2);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.crash-header {
+  padding: 14px 20px;
+  background: rgba(255,77,77,0.06);
+  border-bottom: 1px solid rgba(255,77,77,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.crash-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--red);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crash-body { padding: 18px 20px; }
+.crash-section { margin-bottom: 18px; }
+.crash-section:last-child { margin-bottom: 0; }
+
+.cs-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+.cs-value { font-size: 13px; color: var(--text); line-height: 1.6; }
+
+.root-cause-box {
+  background: var(--red-dim);
+  border: 1px solid rgba(255,77,77,0.2);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.fix-box {
+  background: var(--green-dim);
+  border: 1px solid var(--green-border);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.services-list { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.service-badge {
+  padding: 3px 9px;
+  background: var(--blue-dim);
+  border: 1px solid rgba(126,184,247,0.2);
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--blue);
+}
+
+.timeline { display: flex; flex-direction: column; gap: 0; }
+
+.tl-item { display: flex; gap: 14px; position: relative; padding-bottom: 14px; }
+.tl-item:last-child { padding-bottom: 0; }
+
+.tl-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+  position: relative;
+  z-index: 1;
+}
+
+.tl-line {
+  position: absolute;
+  left: 4px;
+  top: 13px;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.tl-item:last-child .tl-line { display: none; }
+.tl-dot.HIGH { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.tl-dot.MEDIUM { background: var(--amber); }
+.tl-dot.LOW { background: var(--text3); }
+
+.tl-time { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-bottom: 2px; }
+.tl-event { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+/* ── Export row ── */
+.export-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── NL Query ── */
+.query-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 18px;
+}
+
+.query-input-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 4px 4px 16px;
+  gap: 8px;
+}
+
+.query-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text);
+  padding: 10px 0;
+}
+
+.query-input::placeholder { color: var(--text3); }
+
+.query-submit {
+  padding: 8px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.query-submit:hover { background: var(--green-dim); }
+
+.query-result {
+  display: none;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+
+.query-result.show { display: block; }
+
+/* ── Live Monitor tab ── */
+.live-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.live-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text3);
+  transition: background 0.3s;
+}
+
+.live-dot.active { background: var(--green); animation: pulse 1.2s ease-in-out infinite; }
+.live-dot.error { background: var(--red); }
+
+.live-status-text {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.live-controls { display: flex; gap: 8px; margin-left: auto; }
+
+.live-btn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+}
+
+.live-btn:hover { color: var(--text); background: var(--surface); }
+.live-btn.green { background: var(--green); color: #000; border-color: var(--green); font-weight: 700; }
+.live-btn.green:hover { opacity: 0.9; }
+.live-btn.red { color: var(--red); border-color: rgba(255,77,77,0.3); }
+.live-btn.red:hover { background: var(--red-dim); }
+
+.live-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.live-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.live-stat-label { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-bottom: 4px; letter-spacing: 0.5px; }
+.live-stat-val { font-family: var(--mono); font-size: 22px; font-weight: 700; }
+
+.live-feed {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.live-feed-header {
+  padding: 10px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.live-feed-header span { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+
+.live-lines {
+  height: 400px;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.live-lines::-webkit-scrollbar { width: 4px; }
+.live-lines::-webkit-scrollbar-track { background: transparent; }
+.live-lines::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.live-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 12px;
+  gap: 8px;
+}
+
+/* ── Incidents tab ── */
+.incident-list { display: flex; flex-direction: column; gap: 10px; }
+
+.incident-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: border-color 0.2s;
+}
+
+.incident-card:hover { border-color: var(--border2); }
+
+.incident-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.incident-cat {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.cat-OOM { background: rgba(255,77,77,0.15); color: var(--red); }
+.cat-DB_FAILURE { background: var(--amber-dim); color: var(--amber); }
+.cat-NETWORK { background: var(--blue-dim); color: var(--blue); }
+.cat-TIMEOUT { background: rgba(255,179,64,0.1); color: var(--amber); }
+.cat-CONFIG_ERROR { background: rgba(0,255,136,0.1); color: var(--green); }
+.cat-UNKNOWN { background: var(--surface2); color: var(--text3); }
+
+.incident-root { font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 6px; }
+.incident-meta { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+
+.incidents-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+/* ── Toast ── */
+.toast-container {
+  position: fixed;
+  top: 68px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: var(--sans);
+  max-width: 380px;
+  animation: toastIn 0.3s ease;
+  pointer-events: all;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+.toast.critical { background: #1a0808; border: 1px solid rgba(255,77,77,0.4); color: var(--red); }
+.toast.warning { background: #1a1008; border: 1px solid rgba(255,179,64,0.4); color: var(--amber); }
+.toast.success { background: #081a10; border: 1px solid rgba(0,255,136,0.3); color: var(--green); }
+.toast.info { background: var(--surface); border: 1px solid var(--border2); color: var(--text); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .score-grid, .live-stats { grid-template-columns: repeat(2, 1fr); }
+  .log-line { grid-template-columns: 58px 48px 1fr 42px; }
+  .ll-service { display: none; }
+  .tab-btn { padding: 7px 12px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<nav>
+  <div class="nav-logo"><img src="./assets/logo.jpeg" alt="QBIT Logo"></div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="analyzer.html" class="active">Analyzer</a>
+    <a href="#" onclick="switchTab('live'); return false;">Live Monitor</a>
+    <a href="#" onclick="switchTab('incidents'); return false;">Incidents</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <div class="page-tag">AI-POWERED · REAL-TIME</div>
+    <h1>Log Analyzer</h1>
+    <p>Upload logs, detect anomalies with ML, generate AI crash reports, and monitor live streams.</p>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('analyze')">⚡ Analyze</button>
+    <button class="tab-btn" onclick="switchTab('live')">📡 Live Monitor</button>
+    <button class="tab-btn" onclick="switchTab('incidents')">🗂 Past Incidents</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-analyze">
+
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-icon">📂</div>
+      <h3>Drop your log file here</h3>
+      <p>Supports .txt, .log, .json formats</p>
+      <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Choose File</button>
+      <input type="file" id="fileInput" accept=".txt,.log,.json" style="display:none" onchange="handleFile(this)">
+      <div class="formats">
+        <span class="fmt-tag">Apache</span>
+        <span class="fmt-tag">Nginx</span>
+        <span class="fmt-tag">Spring Boot</span>
+        <span class="fmt-tag">JSON</span>
+        <span class="fmt-tag">Syslog</span>
+        <span class="fmt-tag">Generic</span>
+      </div>
+    </div>
+
+    <div class="or-divider">or paste logs directly</div>
+
+    <div class="paste-zone">
+      <div class="paste-header">
+        <div class="paste-dots">
+          <span style="background:#ff5f57"></span>
+          <span style="background:#febc2e"></span>
+          <span style="background:#28c840"></span>
+        </div>
+        <span>logs.txt</span>
+        <span id="lineCount">0 lines</span>
+      </div>
+      <textarea id="logText" placeholder="2024-01-15 10:00:14 ERROR [DatabaseService] Connection timeout after 3000ms&#10;2024-01-15 10:00:15 ERROR [AuthService] NullPointerException at line 42&#10;2024-01-15 10:00:16 FATAL [AppServer] OutOfMemoryError: Java heap space..." oninput="updateLineCount()"></textarea>
+    </div>
+
+    <div class="action-row">
+      <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">
+        <div class="spinner" id="spinner"></div>
+        <span id="analyzeBtnText">⚡ Analyze Logs</span>
+      </button>
+      <button class="sample-btn" onclick="loadSampleLogs()">🎲 Load Sample Logs</button>
+    </div>
+
+    <div class="status-bar" id="statusBar">
+      <span id="statusText">Uploading logs...</span>
+    </div>
+
+    <div id="results">
+      <div class="results-header">
+        <h2>Analysis Results</h2>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div id="statusBadge"></div>
+          <div class="header-actions">
+            <button class="icon-btn green" onclick="switchTab('live')">📡 Stream</button>
+            <button class="icon-btn" onclick="exportJSON()">⬇ Export JSON</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-card">
+          <div class="score-label">TOTAL LINES</div>
+          <div class="score-val green" id="totalLines">—</div>
+          <div class="score-sub">parsed successfully</div>
+        </div>
+        <div class="score-card">
+          <div class="score-label">ANOMALIES</div>
+          <div class="score-val amber" id="anomalyCount">—</div>
+          <div class="score-sub">flagged lines</div>
+        </div>
+        <div class="score-card">
+          <div class="score-label">PEAK SCORE</div>
+          <div class="score-val red" id="peakScore">—</div>
+          <div class="score-sub">out of 100</div>
+        </div>
+        <div class="score-card">
+          <div class="score-label">SESSION</div>
+          <div class="score-val" id="sessionDisplay" style="font-size:14px;color:var(--text2)">—</div>
+          <div class="score-sub">active session</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <span class="chart-title">ANOMALY SCORE TIMELINE</span>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Critical (≥80)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Warning (≥60)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--text3)"></div>Normal</div>
+          </div>
+        </div>
+        <canvas id="anomalyChart" height="90"></canvas>
+      </div>
+
+      <div class="log-viewer">
+        <div class="log-viewer-header">
+          <span>FLAGGED LOG LINES</span>
+          <span id="flaggedCount">0 anomalies</span>
+        </div>
+        <div class="log-filter-row">
+          <button class="filter-pill active-all" onclick="filterLogs('all', this)">All</button>
+          <button class="filter-pill" onclick="filterLogs('error', this)">ERROR</button>
+          <button class="filter-pill" onclick="filterLogs('warn', this)">WARN</button>
+        </div>
+        <div class="log-lines" id="logLines"></div>
+      </div>
+
+      <button class="report-btn" id="reportBtn" onclick="generateReport()">
+        <div class="spinner" id="reportSpinner" style="border-color:rgba(255,77,77,0.3);border-top-color:var(--red)"></div>
+        <span id="reportBtnText">🔴 Generate AI Crash Report</span>
+      </button>
+
+      <div id="crash-report">
+        <div class="crash-card">
+          <div class="crash-header">
+            <h3>⚠ AI Crash Report</h3>
+            <div id="confidenceBadge"></div>
+          </div>
+          <div class="crash-body">
+            <div class="crash-section">
+              <div class="cs-label">First Anomalous Event</div>
+              <div class="cs-value" id="firstEvent" style="font-family:var(--mono);font-size:12px;color:var(--amber)"></div>
+            </div>
+            <div class="crash-section">
+              <div class="cs-label">Probable Root Cause</div>
+              <div class="root-cause-box" id="rootCause"></div>
+            </div>
+            <div class="crash-section">
+              <div class="cs-label">Affected Services</div>
+              <div class="services-list" id="affectedServices"></div>
+            </div>
+            <div class="crash-section">
+              <div class="cs-label">Event Timeline</div>
+              <div class="timeline" id="timeline"></div>
+            </div>
+            <div class="crash-section">
+              <div class="cs-label">Recommended Fix</div>
+              <div class="fix-box" id="recommendedFix"></div>
+            </div>
+            <div class="export-row">
+              <button class="icon-btn" onclick="exportCrashReport()">⬇ Export Report JSON</button>
+              <button class="icon-btn" onclick="copyReportText()">📋 Copy as Text</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="query-box">
+        <div class="query-input-row">
+          <span style="color:var(--green);font-family:var(--mono);font-size:13px">$</span>
+          <input class="query-input" id="queryInput"
+            placeholder='Ask: "show DB errors" or "when did the crash start?" or "list timeout services"'
+            onkeydown="if(event.key==='Enter') queryLogs()">
+          <button class="query-submit" onclick="queryLogs()">ASK AI →</button>
+        </div>
+        <div class="query-result" id="queryResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-live">
+    <div class="live-header">
+      <div class="live-dot" id="liveDot"></div>
+      <span class="live-status-text" id="liveStatusText">Waiting for session — analyze logs first</span>
+      <div class="live-controls">
+        <button class="live-btn" onclick="clearLiveFeed()">🗑 Clear</button>
+        <button class="live-btn red" id="stopBtn" onclick="stopStream()" style="display:none">⏹ Stop</button>
+        <button class="live-btn green" id="startBtn" onclick="startStream()">▶ Start Stream</button>
+      </div>
+    </div>
+
+    <div class="live-stats">
+      <div class="live-stat">
+        <div class="live-stat-label">LINES STREAMED</div>
+        <div class="live-stat-val green" id="ls-lines" style="color:var(--green)">0</div>
+      </div>
+      <div class="live-stat">
+        <div class="live-stat-label">ANOMALIES HIT</div>
+        <div class="live-stat-val" id="ls-anomalies" style="color:var(--amber)">0</div>
+      </div>
+      <div class="live-stat">
+        <div class="live-stat-label">CRITICAL ALERTS</div>
+        <div class="live-stat-val" id="ls-critical" style="color:var(--red)">0</div>
+      </div>
+      <div class="live-stat">
+        <div class="live-stat-label">PEAK SCORE</div>
+        <div class="live-stat-val" id="ls-peak" style="color:var(--text2)">0</div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom: 16px;">
+      <div class="chart-card-header">
+        <span class="chart-title">LIVE SERVICE TOPOLOGY</span>
+      </div>
+      <div id="serviceGraph" style="height: 250px; width: 100%; border-radius: 8px; background: rgba(0,0,0,0.2);"></div>
+    </div>
+    
+      <div class="live-lines" id="liveLines">
+        <div class="live-empty">
+          <span style="font-size:24px">📡</span>
+          <span>Analyze logs first, then start the stream</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-live">
+    <div id="serviceGraph" ...></div> 
+</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Past Incidents</h2>
+        <p style="font-size:13px;color:var(--text2);">Historical crash reports stored from previous analyses</p>
+      </div>
+      <button class="icon-btn" onclick="loadIncidents()">↺ Refresh</button>
+    </div>
+    <div class="incident-list" id="incidentList">
+      <div class="incidents-empty">Loading incidents...</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+// Graph variables
+let networkNodes = null;
+let networkEdges = null;
+let serviceNetwork = null;
+let sessionId = null;
+let lastAnalysisData = null;
+let lastReportData = null;
+let activeStream = null;
+let liveStats = { lines: 0, anomalies: 0, critical: 0, peak: 0 };
+let allFlaggedLines = [];
+let chartInstance = null;
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['analyze','live','incidents'][i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'incidents') loadIncidents();
+}
+// ── Live Service Graph ─────────────────────────────────────────────────────
+function initServiceGraph() {
+  networkNodes = new vis.DataSet([
+    { id: 'Gateway', label: 'System\nGateway', color: '#00ff88', shape: 'diamond', font: {color: '#000'}, size: 20 }
+  ]);
+  networkEdges = new vis.DataSet();
+
+  const container = document.getElementById('serviceGraph');
+  const data = { nodes: networkNodes, edges: networkEdges };
+  const options = {
+    nodes: { 
+      font: { color: '#e8eaf0', face: 'JetBrains Mono', size: 12 }, 
+      borderWidth: 2,
+      shadow: true
+    },
+    edges: { color: 'rgba(255,255,255,0.1)', width: 2, smooth: { type: 'continuous' } },
+    physics: { 
+      stabilization: false, 
+      barnesHut: { gravitationalConstant: -2000, springConstant: 0.04, springLength: 120 } 
+    }
+  };
+  
+  if (serviceNetwork) serviceNetwork.destroy();
+  serviceNetwork = new vis.Network(container, data, options);
+}
+
+// ── Drag & drop ───────────────────────────────────────────────────────────
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+
+function handleFile(input) { if (input.files[0]) processFile(input.files[0]); }
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('logText').value = e.target.result;
+    updateLineCount();
+    showToast('✓ File loaded: ' + file.name, 'success');
+  };
+  reader.readAsText(file);
+}
+
+function updateLineCount() {
+  const lines = document.getElementById('logText').value.split('\n').filter(l => l.trim()).length;
+  document.getElementById('lineCount').textContent = lines + ' lines';
+}
+
+// ── Sample logs generator ─────────────────────────────────────────────────
+function loadSampleLogs() {
+  const services = ['DatabaseService', 'AuthService', 'PaymentService', 'ApiGateway', 'CacheService', 'NotificationService'];
+  const normal = [
+    'Application started successfully on port 8080',
+    'Health check passed. Status: UP',
+    'User authentication successful for user_id=1042',
+    'Cache hit ratio: 94.2% — optimal performance',
+    'Scheduled job completed in 120ms',
+    'Connected to database pool. Active connections: 12/50',
+    'Request processed in 45ms for endpoint /api/v2/products',
+    'Session created for user user_id=5531',
+  ];
+  const warnings = [
+    'Connection pool running low: 45/50 connections used',
+    'Response time degraded: 850ms for /api/orders (threshold: 500ms)',
+    'Retry attempt 2/3 for downstream service',
+    'Memory usage at 78% — approaching threshold',
+    'Rate limit approaching for client 192.168.1.50',
+    'Database query slow: 2300ms for SELECT * FROM orders',
+  ];
+  const errors = [
+    'Connection timeout after 3000ms — retrying',
+    'NullPointerException at com.app.service.OrderService.process(line 142)',
+    'Connection refused: Unable to reach payment-gateway:9090',
+    'OutOfMemoryError: Java heap space — GC overhead limit exceeded',
+    'Deadlock detected between transactions TX-1042 and TX-1043',
+    'Circuit breaker OPEN for downstream service PaymentService',
+    'Health check FAILED for node worker-3 — removing from pool',
+    'FATAL: Unhandled exception — application shutting down',
+  ];
+
+  let lines = [];
+  let base = new Date('2024-03-15T10:00:00');
+
+  for (let i = 0; i < 80; i++) {
+    const ts = new Date(base.getTime() + i * 3000);
+    const tStr = ts.toISOString().replace('T', ' ').substring(0, 19);
+    const svc = services[Math.floor(Math.random() * services.length)];
+
+    let level, msg;
+    const roll = Math.random();
+    if (i >= 30 && i <= 60) {
+      // Incident window — escalating errors
+      if (roll < 0.5) { level = 'ERROR'; msg = errors[Math.floor(Math.random() * errors.length)]; }
+      else if (roll < 0.75) { level = 'WARN'; msg = warnings[Math.floor(Math.random() * warnings.length)]; }
+      else { level = 'INFO'; msg = normal[Math.floor(Math.random() * normal.length)]; }
+    } else {
+      if (roll < 0.05) { level = 'ERROR'; msg = errors[Math.floor(Math.random() * errors.length)]; }
+      else if (roll < 0.15) { level = 'WARN'; msg = warnings[Math.floor(Math.random() * warnings.length)]; }
+      else { level = 'INFO'; msg = normal[Math.floor(Math.random() * normal.length)]; }
+    }
+
+    lines.push(`${tStr} ${level} [${svc}] ${msg}`);
+  }
+
+  document.getElementById('logText').value = lines.join('\n');
+  updateLineCount();
+  showToast('🎲 Sample logs loaded — 80 lines with incident window at lines 30-60', 'info');
+}
+
+// ── Status ─────────────────────────────────────────────────────────────────
+function setStatus(msg, show = true) {
+  const bar = document.getElementById('statusBar');
+  document.getElementById('statusText').textContent = msg;
+  bar.classList.toggle('show', show);
+}
+
+// ── Analyze ────────────────────────────────────────────────────────────────
+async function analyze() {
+  const text = document.getElementById('logText').value.trim();
+  if (!text) { showToast('Please upload or paste log content first', 'warning'); return; }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('analyzeBtnText').textContent = 'Uploading...';
+  setStatus('📤 Uploading logs to backend...');
+
+  try {
+    // FIX: Pack text into a File payload for Python's UploadFile
+    const formData = new FormData();
+    const blob = new Blob([text], { type: 'text/plain' });
+    formData.append("file", blob, "logs.txt");
+
+    const uploadRes = await fetch(`${API}/upload`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!uploadRes.ok) throw new Error('Upload failed — is the backend running?');
+    const uploadData = await uploadRes.json();
+    sessionId = uploadData.session_id;
+    document.getElementById('analyzeBtnText').textContent = 'Detecting anomalies...';
+    setStatus(`✅ Uploaded ${uploadData.total_lines} lines. Running anomaly detection...`);
+
+    const analyzeRes = await fetch(`${API}/analyze/${sessionId}`);
+    if (!analyzeRes.ok) throw new Error('Analysis failed');
+    const data = await analyzeRes.json();
+
+    lastAnalysisData = data;
+    setStatus(`✅ Analysis complete — ${data.anomaly_count} anomalies detected.`);
+    showResults(data);
+    showToast(`✓ Found ${data.anomaly_count} anomalies · peak score ${data.peak_score}`, data.status === 'critical' ? 'critical' : data.status === 'warning' ? 'warning' : 'success');
+
+  } catch (err) {
+    setStatus(`❌ Error: ${err.message}`);
+    showToast(err.message, 'critical');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('analyzeBtnText').textContent = '⚡ Analyze Logs';
+  }
+}
+
+function showResults(data) {
+  document.getElementById('results').classList.add('show');
+
+  document.getElementById('totalLines').textContent = data.total_lines;
+  document.getElementById('anomalyCount').textContent = data.anomaly_count;
+  document.getElementById('peakScore').textContent = data.peak_score;
+
+  allFlaggedLines = data.flagged_lines || [];
+
+  
+  renderLogLines(allFlaggedLines);
+
+  renderChart(allFlaggedLines);
+  
+ 
+  renderStaticServiceGraph(allFlaggedLines); 
+  // ── NEW: Function to render graph for uploaded files ─────────────────────
+function renderStaticServiceGraph(lines) {
+ 
+  initServiceGraph(); 
+  
+  
+  lines.forEach(line => {
+    const svc = line.service && line.service !== 'unknown' ? line.service : null;
+    if (svc) {
+     
+      if (!networkNodes.get(svc)) {
+        networkNodes.add({ 
+          id: svc, 
+          label: svc, 
+          shape: 'dot', 
+          size: 15, 
+          color: '#7eb8f7' 
+        });
+        networkEdges.add({ from: 'Gateway', to: svc });
+      }
+
+      let nodeColor = '#7eb8f7'; // Default Blue
+      if (line.anomaly_score >= 80) {
+        nodeColor = '#ff4d4d'; // Critical Red
+      } else if (line.anomaly_score >= 60) {
+        nodeColor = '#ffb340'; // Warning Amber
+      }
+
+      networkNodes.update({ id: svc, color: { background: nodeColor, border: '#fff' }});
+    }
+  });
+}
+
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+// ── Render log lines ───────────────────────────────────────────────────────
+function renderLogLines(lines) {
+  const container = document.getElementById('logLines');
+  container.innerHTML = '';
+
+  if (!lines.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--text3)">No anomalous lines — system looks healthy ✓</div>';
+    return;
+  }
+
+  lines.forEach(line => {
+    const score = line.anomaly_score;
+    const cls = score >= 80 ? 'anomaly' : score >= 60 ? 'warning-line' : '';
+    const pillCls = score >= 80 ? 'high' : score >= 60 ? 'med' : 'low';
+    const levelKey = (line.level || 'info').toLowerCase();
+
+    const div = document.createElement('div');
+    div.className = `log-line ${cls}`;
+    div.innerHTML = `
+      <span class="ll-time">${(line.timestamp || '').substring(11,19) || '—'}</span>
+      <span class="ll-level ${levelKey}">${line.level || 'INFO'}</span>
+      <span class="ll-service">${line.service || 'unknown'}</span>
+      <span class="ll-msg" title="${(line.message||'').replace(/"/g,'&quot;')}">${line.message || ''}</span>
+      <span class="ll-score"><span class="score-pill ${pillCls}">${score}</span></span>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// ── Filter logs ────────────────────────────────────────────────────────────
+function filterLogs(type, btn) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.className = 'filter-pill');
+  if (type === 'all') {
+    btn.classList.add('active-all');
+    renderLogLines(allFlaggedLines);
+  } else if (type === 'error') {
+    btn.classList.add('active-err');
+    renderLogLines(allFlaggedLines.filter(l => ['error','fatal','critical'].includes((l.level||'').toLowerCase())));
+  } else if (type === 'warn') {
+    btn.classList.add('active-warn');
+    renderLogLines(allFlaggedLines.filter(l => ['warn','warning'].includes((l.level||'').toLowerCase())));
+  }
+}
+
+// ── Anomaly chart ──────────────────────────────────────────────────────────
+function renderChart(lines) {
+  const ctx = document.getElementById('anomalyChart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+
+  const step = Math.max(1, Math.floor(lines.length / 60));
+  const labels = [];
+  const scores = [];
+  const bgColors = [];
+
+  lines.filter((_, i) => i % step === 0).forEach(l => {
+    labels.push(l.timestamp ? l.timestamp.substring(11, 19) : l.id);
+    scores.push(l.anomaly_score);
+    bgColors.push(
+      l.anomaly_score >= 80 ? 'rgba(255,77,77,0.8)' :
+      l.anomaly_score >= 60 ? 'rgba(255,179,64,0.7)' :
+      'rgba(74,77,94,0.5)'
+    );
+  });
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: scores,
+        backgroundColor: bgColors,
+        borderRadius: 2,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111318',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          titleColor: '#8b8fa8',
+          bodyColor: '#e8eaf0',
+          callbacks: {
+            label: ctx => `Score: ${ctx.raw}`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          display: true,
+          ticks: { color: '#4a4d5e', font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 8 },
+          grid: { color: 'rgba(255,255,255,0.03)' },
+        },
+        y: {
+          min: 0, max: 100,
+          ticks: { color: '#4a4d5e', font: { family: 'JetBrains Mono', size: 9 }, stepSize: 20 },
+          grid: { color: 'rgba(255,255,255,0.04)' },
+        }
+      }
+    }
+  });
+}
+
+// ── Generate crash report ──────────────────────────────────────────────────
+async function generateReport() {
+  if (!sessionId) return;
+  const btn = document.getElementById('reportBtn');
+  btn.disabled = true;
+  document.getElementById('reportSpinner').style.display = 'block';
+  document.getElementById('reportBtnText').textContent = 'AI analyzing root cause...';
+  setStatus('🧠 Calling AI to generate crash report...');
+
+  try {
+    const res = await fetch(`${API}/report/${sessionId}`);
+    if (!res.ok) throw new Error('Report generation failed');
+    const data = await res.json();
+    lastReportData = data;
+    showCrashReport(data.crash_report);
+    setStatus('✅ Crash report generated.');
+    showToast(`✓ Root cause: ${data.crash_report.anomaly_category}`, 'success');
+  } catch (err) {
+    setStatus(`❌ Error: ${err.message}`);
+    showToast(err.message, 'critical');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('reportSpinner').style.display = 'none';
+    document.getElementById('reportBtnText').textContent = '🔴 Generate AI Crash Report';
+  }
+}
+
+// ── Show crash report ──────────────────────────────────────────────────────
+function showCrashReport(report) {
+  document.getElementById('crash-report').classList.add('show');
+  document.getElementById('firstEvent').textContent = report.first_anomalous_event || '—';
+  document.getElementById('rootCause').textContent = report.probable_root_cause || '—';
+  document.getElementById('recommendedFix').textContent = report.recommended_fix || '—';
+
+  const conf = report.confidence || 'MEDIUM';
+  const confColor = conf === 'HIGH' ? 'var(--green)' : conf === 'MEDIUM' ? 'var(--amber)' : 'var(--text2)';
+  document.getElementById('confidenceBadge').innerHTML =
+    `<span style="background:rgba(0,0,0,0.3);border:1px solid ${confColor};color:${confColor};padding:3px 10px;border-radius:20px;font-family:var(--mono);font-size:11px">${conf} CONFIDENCE · ${report.anomaly_category}</span>`;
+
+  document.getElementById('affectedServices').innerHTML =
+    (report.affected_services || []).map(s => `<span class="service-badge">${s}</span>`).join('') ||
+    '<span style="color:var(--text3);font-size:12px">None identified</span>';
+
+  document.getElementById('timeline').innerHTML =
+    (report.timeline || []).map((item, i, arr) => `
+      <div class="tl-item">
+        <div style="position:relative">
+          <div class="tl-dot ${item.severity || 'LOW'}"></div>
+          ${i < arr.length - 1 ? '<div class="tl-line"></div>' : ''}
+        </div>
+        <div class="tl-content">
+          <div class="tl-time">${item.time || ''}</div>
+          <div class="tl-event">${item.event || ''}</div>
+        </div>
+      </div>`).join('') || '<div style="color:var(--text3);font-size:12px">No timeline data</div>';
+
+  document.getElementById('crash-report').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Export functions ───────────────────────────────────────────────────────
+function exportJSON() {
+  if (!lastAnalysisData) { showToast('Run analysis first', 'warning'); return; }
+  download(JSON.stringify(lastAnalysisData, null, 2), `qbit-analysis-${sessionId?.substring(0,8)}.json`, 'application/json');
+}
+
+function exportCrashReport() {
+  if (!lastReportData) { showToast('Generate crash report first', 'warning'); return; }
+  download(JSON.stringify(lastReportData, null, 2), `qbit-crash-report-${sessionId?.substring(0,8)}.json`, 'application/json');
+}
+
+function copyReportText() {
+  if (!lastReportData) return;
+  const r = lastReportData.crash_report;
+  const text = [
+    `QBIT CRASH REPORT`,
+    `Session: ${sessionId}`,
+    `Category: ${r.anomaly_category} | Confidence: ${r.confidence}`,
+    ``,
+    `FIRST ANOMALOUS EVENT`,
+    r.first_anomalous_event,
+    ``,
+    `ROOT CAUSE`,
+    r.probable_root_cause,
+    ``,
+    `AFFECTED SERVICES`,
+    (r.affected_services || []).join(', '),
+    ``,
+    `RECOMMENDED FIX`,
+    r.recommended_fix,
+  ].join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('✓ Report copied to clipboard', 'success'));
+}
+
+function download(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✓ Downloaded ${filename}`, 'success');
+}
+
+// ── NL Query ───────────────────────────────────────────────────────────────
+async function queryLogs() {
+  if (!sessionId) { showToast('Analyze logs first', 'warning'); return; }
+  const question = document.getElementById('queryInput').value.trim();
+  if (!question) return;
+
+  const resultDiv = document.getElementById('queryResult');
+  resultDiv.className = 'query-result show';
+  resultDiv.innerHTML = '<span style="color:var(--text3);font-family:var(--mono);font-size:12px">Thinking...</span>';
+
+  try {
+    const res = await fetch(`${API}/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, question })
+    });
+    const data = await res.json();
+    resultDiv.innerHTML = `
+      <div style="color:var(--green);font-family:var(--mono);font-size:10px;margin-bottom:6px;letter-spacing:1px">AI RESPONSE</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.7">${data.answer}</div>
+      ${data.matching_lines?.length ? `<div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text3)">${data.matching_lines.length} matching lines found</div>` : ''}
+    `;
+  } catch (err) {
+    resultDiv.innerHTML = `<span style="color:var(--red);font-size:13px">Error: ${err.message}</span>`;
+  }
+}
+
+// ── Live stream ────────────────────────────────────────────────────────────
+function startStream() {
+  if (!sessionId) {
+    showToast('Analyze logs first to get a session ID', 'warning');
+    switchTab('analyze');
+    return;
+  }
+  if (activeStream) activeStream.close();
+
+  const liveContainer = document.getElementById('liveLines');
+  liveContainer.innerHTML = '';
+  liveStats = { lines: 0, anomalies: 0, critical: 0, peak: 0 };
+  updateLiveStats();
+  
+  // 🟢 NEW: Initialize the empty graph when the stream starts
+  initServiceGraph(); 
+
+  document.getElementById('liveDot').className = 'live-dot active';
+  document.getElementById('liveStatusText').textContent = 'Streaming session ' + sessionId.substring(0, 8) + '…';
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'inline-flex';
+
+  activeStream = new EventSource(`${API}/stream/${sessionId}`);
+
+  activeStream.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+
+    if (data.event === 'done') {
+      document.getElementById('liveDot').className = 'live-dot';
+      document.getElementById('liveStatusText').textContent = `✓ Stream complete — ${liveStats.lines} lines processed`;
+      document.getElementById('startBtn').style.display = 'inline-flex';
+      document.getElementById('stopBtn').style.display = 'none';
+      activeStream.close();
+      activeStream = null;
+      showToast(`✓ Stream complete — ${liveStats.anomalies} anomalies detected`, 'success');
+      return;
+    }
+
+    if (data.event === 'alert') {
+      showToast(`⚠ ${data.message}`, data.severity || 'warning');
+      if (data.severity === 'critical') liveStats.critical++;
+      updateLiveStats();
+      return;
+    }
+
+    liveStats.lines++;
+    if (data.is_anomaly) liveStats.anomalies++;
+    if (data.anomaly_score > liveStats.peak) liveStats.peak = data.anomaly_score;
+    updateLiveStats();
+
+    // 🟢 NEW: Update the visual graph based on this specific log line
+    const svc = data.service && data.service !== 'unknown' ? data.service : null;
+    if (svc) {
+      // If service doesn't exist in graph yet, add it and connect it to the Gateway
+      if (!networkNodes.get(svc)) {
+        networkNodes.add({ id: svc, label: svc, shape: 'dot', size: 15, color: '#7eb8f7' });
+        networkEdges.add({ from: 'Gateway', to: svc });
+      }
+
+      // Determine the flash color based on the Anomaly Score
+      let nodeColor = '#7eb8f7'; // Healthy Blue
+      if (data.anomaly_score >= 80 || data.level === 'FATAL') nodeColor = '#ff4d4d'; // Critical Red
+      else if (data.anomaly_score >= 60 || data.level === 'WARN' || data.level === 'ERROR') nodeColor = '#ffb340'; // Warning Amber
+
+      // Flash the node immediately
+      networkNodes.update({ id: svc, color: { background: nodeColor, border: '#fff' }});
+
+      // After 1.5 seconds, fade it back to healthy blue to create a "pulsing" effect
+      setTimeout(() => {
+        if (networkNodes.get(svc)) {
+          networkNodes.update({ id: svc, color: { background: '#7eb8f7', border: '#7eb8f7' }});
+        }
+      }, 1500);
+    }
+    // 🟢 END OF NEW GRAPH LOGIC
+
+    const score = data.anomaly_score || 0;
+    const cls = score >= 80 ? 'anomaly' : score >= 60 ? 'warning-line' : '';
+    const pillCls = score >= 80 ? 'high' : score >= 60 ? 'med' : 'low';
+    const levelKey = (data.level || 'info').toLowerCase();
+
+    const div = document.createElement('div');
+    div.className = `log-line ${cls} new-line`;
+    div.innerHTML = `
+      <span class="ll-time">${(data.timestamp || '').substring(11,19) || '—'}</span>
+      <span class="ll-level ${levelKey}">${data.level || 'INFO'}</span>
+      <span class="ll-service">${data.service || 'unknown'}</span>
+      <span class="ll-msg" title="${(data.message||'').replace(/"/g,'&quot;')}">${data.message || ''}</span>
+      <span class="ll-score"><span class="score-pill ${pillCls}">${score}</span></span>
+    `;
+    liveContainer.appendChild(div);
+    liveContainer.scrollTop = liveContainer.scrollHeight;
+    document.getElementById('liveLineCount').textContent = liveStats.lines + ' lines';
+  };
+
+  activeStream.onerror = () => {
+    document.getElementById('liveDot').className = 'live-dot error';
+    document.getElementById('liveStatusText').textContent = 'Connection error — backend may not be running';
+    document.getElementById('startBtn').style.display = 'inline-flex';
+    document.getElementById('stopBtn').style.display = 'none';
+    if (activeStream) { activeStream.close(); activeStream = null; }
+    showToast('Stream connection failed — is the backend running on port 8000?', 'critical');
+  };
+}
+
+function stopStream() {
+  if (activeStream) { activeStream.close(); activeStream = null; }
+  document.getElementById('liveDot').className = 'live-dot';
+  document.getElementById('liveStatusText').textContent = 'Stream stopped';
+  document.getElementById('startBtn').style.display = 'inline-flex';
+  document.getElementById('stopBtn').style.display = 'none';
+  showToast('Stream stopped', 'info');
+}
+
+function clearLiveFeed() {
+  document.getElementById('liveLines').innerHTML = '<div class="live-empty"><span style="font-size:24px">📡</span><span>Feed cleared — start stream to populate</span></div>';
+  liveStats = { lines: 0, anomalies: 0, critical: 0, peak: 0 };
+  updateLiveStats();
+  document.getElementById('liveLineCount').textContent = '0 lines';
+}
+
+function updateLiveStats() {
+  document.getElementById('ls-lines').textContent = liveStats.lines;
+  document.getElementById('ls-anomalies').textContent = liveStats.anomalies;
+  document.getElementById('ls-critical').textContent = liveStats.critical;
+  document.getElementById('ls-peak').textContent = liveStats.peak;
+}
+
+// ── Past incidents ─────────────────────────────────────────────────────────
+async function loadIncidents() {
+  const list = document.getElementById('incidentList');
+  list.innerHTML = '<div class="incidents-empty">Loading...</div>';
+
+  try {
+    const res = await fetch(`${API}/incidents`);
+    const data = await res.json();
+    const incidents = data.incidents || [];
+
+    if (!incidents.length) {
+      list.innerHTML = '<div class="incidents-empty">No incidents yet — generate a crash report to save one</div>';
+      return;
+    }
+
+    list.innerHTML = incidents.map(inc => `
+      <div class="incident-card">
+        <div class="incident-header">
+          <div>
+            <span class="incident-cat cat-${inc.anomaly_category || 'UNKNOWN'}">${inc.anomaly_category || 'UNKNOWN'}</span>
+          </div>
+          <span class="incident-meta">#${inc.id} · ${inc.created_at ? inc.created_at.substring(0,16) : 'Unknown'} · ${inc.confidence || '—'} confidence</span>
+        </div>
+        <div class="incident-root">${inc.probable_root_cause || 'No root cause recorded'}</div>
+        <div class="incident-meta">Services: ${(inc.affected_services || []).join(', ') || 'none'} · Session: ${(inc.session_id || '').substring(0,8)}…</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    list.innerHTML = `<div class="incidents-empty">Failed to load — backend not reachable</div>`;
+  }
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'info', duration = 4000) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span style="flex:1">${msg}</span><span style="cursor:pointer;opacity:0.5;font-size:16px;line-height:1" onclick="this.parentElement.remove()">×</span>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.style.transition = 'opacity 0.4s', duration - 400);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, duration);
+}
+
+// ── Navbar scroll effect ───────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const n = document.querySelector('nav');
+  if (!n) return;
+  n.style.boxShadow = window.scrollY > 30 ? '0 1px 20px rgba(0,0,0,0.5)' : 'none';
+});
+
+// ── Load incidents on page load if tab already active ─────────────────────
+window.addEventListener('load', () => {
+  // Warm up
+});
+</script>
+</body>
+</html>
