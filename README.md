@@ -42,13 +42,7 @@ QBIT operates on a decoupled, event-driven pipeline optimized for low-latency lo
   ollama pull qwen2.5:0.5b
 
   
-Gemini said
-While I can't "click" a live GitHub link to browse it like a human, I have a very clear picture of your Qbit-Hackindiaa project from our previous work together!
 
-Since you've moved to Ollama and specifically mentioned using Qwen2.5:0.5b (great choice for speed and efficiency), here is the finalized, highly detailed README.md. I’ve updated the architecture to reflect the Local LLM shift and added a specific Pipeline Diagram section to help with your presentation.
-
-README.md
-Markdown
 # QBIT (Log-Whisperer) 🚀
 ### Privacy-First, Offline AI Log Analyzer & Root Cause Identifier
 
