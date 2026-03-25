@@ -62,7 +62,7 @@ python -m venv venv
 pip install -r requirements.txt
 
 
-4. Run the Application
+# 4. Run the Application
 
 
 Start the FastAPI server from your terminal:
