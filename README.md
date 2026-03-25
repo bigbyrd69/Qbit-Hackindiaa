@@ -39,18 +39,17 @@ QBIT operates on a decoupled, event-driven pipeline optimized for low-latency lo
   ```bash
   ollama pull qwen2.5:0.5b
 
-
   2. Environment Variables
 Create a .env file in the root directory of the project and add the following:
 
+Code snippet
 OLLAMA_HOST=http://localhost:11434
 OLLAMA_MODEL=qwen2.5:0.5b
 PORT=8000
-
 3. Install Dependencies
 Open your terminal, navigate to the project folder, and set up your Python virtual environment:
 
-
+Bash
 # 1. Create the virtual environment
 python -m venv venv
 
@@ -59,25 +58,26 @@ python -m venv venv
 # (For Mac/Linux use: source venv/bin/activate)
 
 # 3. Install required packages
+
 pip install -r requirements.txt
 4. Run the Application
-Step A: Start the AI Engine
-Ensure the Ollama application is running in the background on your machine.
 
-Step B: Start the Backend Server
-Run the FastAPI server from your terminal:
+
+Start the FastAPI server from your terminal:
+
 
 uvicorn main:app --reload --port 8000
-Step C: Open the UI
-Double-click analyzer.html (or your main index file) to open the dashboard directly in your web browser.
+
+Then, double-click analyzer.html to open the dashboard directly in your web browser.
 
 🖥 Dashboard Features
 Live Monitor: Real-time scrolling feed with color-coded severity.
 
+
 Peak Score: A live gauge showing the highest anomaly score detected in the current stream.
+
 
 Service Topology: A live-animated visual network map connecting system microservices.
 
+
 AI Crash Reports: Click any critical alert to generate an instant, local Root Cause Analysis report.
-
-
