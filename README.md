@@ -60,6 +60,8 @@ python -m venv venv
 # 3. Install required packages
 
 pip install -r requirements.txt
+
+
 4. Run the Application
 
 
